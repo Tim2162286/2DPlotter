@@ -1,4 +1,5 @@
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 
@@ -21,6 +22,6 @@ public interface EdgeDetector {
      * edge detection algorithm.
      * @returns boolean[][] true if the pixel is on an edge, false if not
      */
-    public boolean[][] getEdgeMatrix();
+    public boolean[][] getEdgeMatrix() throws IOException;
 
 }

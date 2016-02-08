@@ -16,7 +16,7 @@ public class EdgeDetectorControl {
         //String directory = stdin.readLine();
         //String file = stdin.readLine();
         //File imgPath = new File(directory+"/"+file);
-        File imgPath = new File("C:/Users/Tim/Pictures/2014 Swim and Dive/2014 Swim and Dive/Charger Invite Swim 10.23.14/IMG_0242.jpg");
+        File imgPath = new File("C:/Users/Tim/Pictures/Caves.jpg");
         BufferedImage img = ImageIO.read(imgPath);
         detector.loadImage(img);
         detector.getEdgeMatrix();
