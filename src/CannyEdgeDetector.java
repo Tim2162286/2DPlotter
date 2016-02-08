@@ -12,19 +12,30 @@ import java.net.URL;
  */
 public class CannyEdgeDetector implements EdgeDetector {
 
-    public static void main(String[] args) throws IOException {
+    private BufferedImage image;
 
-        CannyEdgeDetector detector = new CannyEdgeDetector();
-        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-        File imgPath = new File("C:/Users/Tim/Pictures/generator_pic");
-        BufferedImage img = ImageIO.read(imgPath);
-
-    }
     public boolean[][] getEdgeMatrix() {
+        int[] dimentions  = {image.getWidth(),image.getHeight()};
+        convertToGrayscale(image, dimentions);
+
         return new boolean[0][];
     }
 
     public void loadImage(BufferedImage img){
+        this.image = img;
 
+    }
+    public int[][] convertToGrayscale(BufferedImage img, int[] dims){
+        int[][] grayImage = new int[dims[0]][dims[1]];
+        for (int i=0; i<dims[0];i++){
+            for (int j=0; j<dims[1];j++){
+                int rgb = img.getRGB(i,j);
+                int r = (rgb)&0xFF;
+                int g = (rgb>>8)&0xFF;
+                int b = (rgb>>16)&0xFF;
+                grayImage[i][j] = (r+b+g)/3;
+            }
+        }
+        return grayImage;
     }
 }
