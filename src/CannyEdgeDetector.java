@@ -3,8 +3,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 
 /**
@@ -19,9 +17,12 @@ public class CannyEdgeDetector implements EdgeDetector {
         ImageIO.write(image, "jpg", output);
         BufferedImage grayImg = convertToGrayScale(image);
         int[][] sobelX = {{-1,0,1},{-2,0,2},{-1,0,1}};
+        int[][] sobelY = {{1,2,1},{0,0,0},{-1,-2,-1}};
         int[][] grayArray = imageToMatrix(grayImg);
         int[][] blur = blur(1.5, 2, grayArray);
         matrixToImage(blur,"Post Gaussian Blur");
+        int[][] xGradient = convolution(sobelX, blur);
+        int[][] yGradient = convolution(sobelY, blur);
         return new boolean[0][];
     }
 
@@ -113,5 +114,30 @@ public class CannyEdgeDetector implements EdgeDetector {
             }
         }
         return result;
+    }
+
+    private int[][] convolution(int[][] mask, int[][] img){
+        int radius = mask.length/2;
+        int diameter = (2*radius)+1;
+        int width = img.length;
+        int height = img[0].length;
+        int[][] result = new int[width-2*radius][height-2*radius];
+        int blockVal;
+        for (int w=0;w<width-2*radius;w++){
+            for (int h=0;h<height-2*radius;h++){
+                blockVal=0;
+                for (int i=0;i<diameter;i++){
+                    for (int j=0;j<diameter;j++){
+                        blockVal += img[w+i][h+j]*mask[i][j];
+                    }
+                }
+                result[w][h] = blockVal;
+
+            }
+        }
+        return result;
+    }
+    private int[][] gradientMagnitudes(){
+        
     }
 }
