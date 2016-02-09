@@ -3,6 +3,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 
 /**
@@ -13,11 +15,13 @@ public class CannyEdgeDetector implements EdgeDetector {
     private BufferedImage image;
 
     public boolean[][] getEdgeMatrix() throws IOException {
+        File output = new File("C:\\Users\\Tim\\IdeaProjects\\Test\\src\\Images\\Base Image.jpg");
+        ImageIO.write(image, "jpg", output);
         BufferedImage grayImg = convertToGrayScale(image);
         int[][] sobelX = {{-1,0,1},{-2,0,2},{-1,0,1}};
         int[][] grayArray = imageToMatrix(grayImg);
-        int[][] blur = blur(1.41, 2, grayArray);
-        //matrixToImage(blur,"test");
+        int[][] blur = blur(1.5, 2, grayArray);
+        matrixToImage(blur,"Post Gaussian Blur");
         return new boolean[0][];
     }
 
@@ -34,7 +38,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         Graphics g = result.getGraphics();
         g.drawImage(image, 0, 0, null);
         g.dispose();
-        File output = new File("GrayScaled.jpg");
+        File output = new File("C:\\Users\\Tim\\IdeaProjects\\Test\\src\\Images\\GrayScaled.jpg");
         ImageIO.write(result, "jpg", output);
         return result;
     }
@@ -49,7 +53,7 @@ public class CannyEdgeDetector implements EdgeDetector {
                 img.setRGB(i,j,gray.getRGB());
             }
         }
-        File output = new File(name+".jpg");
+        File output = new File("C:\\Users\\Tim\\IdeaProjects\\Test\\src\\Images\\"+name+".jpg");
         ImageIO.write(img, "jpg", output);
         return img;
     }
@@ -95,13 +99,17 @@ public class CannyEdgeDetector implements EdgeDetector {
         int width = img.length;
         int height = img[0].length;
         int[][] result = new int[width-2*radius][height-2*radius];
+        int blockVal;
         for (int w=0;w<width-2*radius;w++){
             for (int h=0;h<height-2*radius;h++){
+                blockVal=0;
                 for (int i=0;i<diameter;i++){
                     for (int j=0;j<diameter;j++){
-
+                        blockVal += img[w+i][h+j]*blurMask[i][j];
                     }
                 }
+                result[w][h] = blockVal/sum;
+
             }
         }
         return result;
