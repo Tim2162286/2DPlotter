@@ -16,7 +16,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         BufferedImage grayImg = convertToGrayScale(image);
         int[][] sobelX = {{-1,0,1},{-2,0,2},{-1,0,1}};
         int[][] grayArray = imageToMatrix(grayImg);
-        int[][] blur = blur(1.4, 2, grayArray);
+        int[][] blur = blur(1.41, 2, grayArray);
         //matrixToImage(blur,"test");
         return new boolean[0][];
     }
@@ -74,11 +74,29 @@ public class CannyEdgeDetector implements EdgeDetector {
     }
 
     private int[][] blur(double sigma,int radius, int[][] img){
-        int[][] blurMask = new int[(2*radius)+1][(2*radius)+1];
-        for (int i =0;i<(2*radius)+1;i++){
-            for (int j=0;j<(2*radius)+1;j++){
-                blurMask[i][j] = (int)((1/(2*Math.PI*sigma*sigma))*Math.exp(-(((i-radius)*(i-radius)+
+        int diameter = (2*radius)+1;
+        double[][] blurRaw = new double[diameter][diameter];
+        double sum = 0;
+        double val;
+        for (int i =0;i<diameter;i++){
+            for (int j=0;j<diameter;j++){
+                val = ((1/(2*Math.PI*sigma*sigma))*Math.exp(-(((i-radius)*(i-radius)+
                         (j-radius)*(j-radius))/(2*sigma*sigma))));
+                blurRaw[i][j] = val;
+                sum += val;
+                System.out.print(val+" ");
+            }
+            System.out.print("\n");
+        }
+        double multiplier = 2/blurRaw[0][0];
+        int [][] blurMask = new int[diameter][diameter];
+        int cell;
+        int total=0;
+        for (int i =0;i<diameter;i++) {
+            for (int j = 0; j < diameter; j++) {
+                cell = (int)Math.round(blurRaw[i][j]*multiplier);
+                blurMask[i][j] = cell;
+                total += cell;
             }
         }
         printMatrix(blurMask);
@@ -87,7 +105,11 @@ public class CannyEdgeDetector implements EdgeDetector {
         int[][] result = new int[width-2*radius][height-2*radius];
         for (int w=0;w<width-2*radius;w++){
             for (int h=0;h<height-2*radius;h++){
+                for (int i=0;i<diameter;i++){
+                    for (int j=0;j<diameter;j++){
 
+                    }
+                }
             }
         }
         return result;
