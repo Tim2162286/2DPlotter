@@ -20,7 +20,7 @@ public interface SplineGenerator {
      * Gets an ArrayList containing the coefficients for the parametric
      * splines that compose the image.
      * @param resolution the number of pixels to skip when generating the splines
-     * @returns ArrayList containing one parametric spline for each edge
+     * @return ArrayList containing one parametric spline for each edge
      */
     public ArrayList<ArrayList<Double[]>> getCoefficients(int resolution);
 

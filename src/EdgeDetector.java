@@ -20,7 +20,7 @@ public interface EdgeDetector {
      * Get a boolean 2D array indicating whether each pixel in the
      * image is on a detected edge. Calling this method will run the
      * edge detection algorithm.
-     * @returns boolean[][] true if the pixel is on an edge, false if not
+     * @return boolean[][] true if the pixel is on an edge, false if not
      */
     public boolean[][] getEdgeMatrix() throws IOException;
 
