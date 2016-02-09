@@ -19,11 +19,12 @@ public class CannyEdgeDetector implements EdgeDetector {
         int[][] sobelX = {{-1,0,1},{-2,0,2},{-1,0,1}};
         int[][] sobelY = {{1,2,1},{0,0,0},{-1,-2,-1}};
         int[][] grayArray = imageToMatrix(grayImg);
-        int[][] blur = blur(1.5, 2, grayArray);
-        matrixToImage(blur,"Post Gaussian Blur");
+        int[][] blur = blur(1.41, 2, grayArray);
+        matrixToImage(blur,"Step 2-Blur");
         int[][] xGradient = convolution(sobelX, blur);
         int[][] yGradient = convolution(sobelY, blur);
-        int[][] gradient = gradientMagnitudes(xGradient,yGradient);
+        int[][][] gradient = gradientMagnitudes(xGradient,yGradient);
+        //printMatrix(gradient);
         return new boolean[0][];
     }
 
@@ -40,7 +41,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         Graphics g = result.getGraphics();
         g.drawImage(image, 0, 0, null);
         g.dispose();
-        File output = new File("src\\Images\\GrayScaled.jpg");
+        File output = new File("src\\Images\\Step 1-Grayscale.jpg");
         ImageIO.write(result, "jpg", output);
         return result;
     }
@@ -96,8 +97,8 @@ public class CannyEdgeDetector implements EdgeDetector {
             }
         }
 
-        printMatrix(blurMask);
-        System.out.println(sum);
+        //printMatrix(blurMask);
+        //System.out.println(sum);
         int width = img.length;
         int height = img[0].length;
         int[][] result = new int[width-2*radius][height-2*radius];
@@ -138,15 +139,26 @@ public class CannyEdgeDetector implements EdgeDetector {
         }
         return result;
     }
-    private int[][] gradientMagnitudes(int[][] xGrad, int[][] yGrad){
+    private int[][][] gradientMagnitudes(int[][] xGrad, int[][] yGrad)throws IOException{
         int width = xGrad.length;
         int height = xGrad[0].length;
-        int[][] gradient = new int[width][height];
+        int[][] gradientMag = new int[width][height];
+        int[][] gradientDirection = new int[width][height];
+        int direction;
+        int mag;
         for (int i = 0;i<width;i++){
             for (int j=0;j<height;j++){
-                gradient[i][j] = (int)Math.sqrt((double)(xGrad[i][j]*xGrad[i][j])+(yGrad[i][j]*yGrad[i][j]));
+                mag = (int)Math.sqrt((double)(xGrad[i][j]*xGrad[i][j])+(yGrad[i][j]*yGrad[i][j]));
+                if (mag>255)
+                    mag = 255;
+                gradientMag[i][j] = mag;
+                direction =  (int)Math.toDegrees(Math.atan2(yGrad[i][j],xGrad[i][j]));
+                //if (direction<)
+                //System.out.print(direction+" ");
             }
+            //System.out.print("\n");
         }
-        return gradient;
+        matrixToImage(gradientMag,"Step 3-Find Gradient");
+        return new int[0][0][];
     }
 }
