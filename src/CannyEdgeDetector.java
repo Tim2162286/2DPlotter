@@ -75,31 +75,23 @@ public class CannyEdgeDetector implements EdgeDetector {
 
     private int[][] blur(double sigma,int radius, int[][] img){
         int diameter = (2*radius)+1;
-        double[][] blurRaw = new double[diameter][diameter];
-        double sum = 0;
-        double val;
+        int[][] blurMask = new int[diameter][diameter];
+        double multiplier = 2/((1/(2*Math.PI*sigma*sigma))*Math.exp(-(((-radius)*(-radius)+
+                (-radius)*(-radius))/(2*sigma*sigma))));
+        int sum = 0;
+
+        int val;
         for (int i =0;i<diameter;i++){
             for (int j=0;j<diameter;j++){
-                val = ((1/(2*Math.PI*sigma*sigma))*Math.exp(-(((i-radius)*(i-radius)+
-                        (j-radius)*(j-radius))/(2*sigma*sigma))));
-                blurRaw[i][j] = val;
+                val = (int)Math.round(((1/(2*Math.PI*sigma*sigma))*Math.exp(-(((i-radius)*(i-radius)+
+                        (j-radius)*(j-radius))/(2*sigma*sigma))))*multiplier);
+                blurMask[i][j] = val;
                 sum += val;
-                System.out.print(val+" ");
-            }
-            System.out.print("\n");
-        }
-        double multiplier = 2/blurRaw[0][0];
-        int [][] blurMask = new int[diameter][diameter];
-        int cell;
-        int total=0;
-        for (int i =0;i<diameter;i++) {
-            for (int j = 0; j < diameter; j++) {
-                cell = (int)Math.round(blurRaw[i][j]*multiplier);
-                blurMask[i][j] = cell;
-                total += cell;
             }
         }
+
         printMatrix(blurMask);
+        System.out.println(sum);
         int width = img.length;
         int height = img[0].length;
         int[][] result = new int[width-2*radius][height-2*radius];
