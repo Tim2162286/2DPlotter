@@ -14,7 +14,10 @@ public class CannyEdgeDetector implements EdgeDetector {
 
     public boolean[][] getEdgeMatrix() throws IOException {
         BufferedImage grayImg = convertToGrayScale(image);
+        int[][] sobelX = {{-1,0,1},{-2,0,2},{-1,0,1}};
         int[][] grayArray = imageToMatrix(grayImg);
+        int[][] blur = blur(1.4, 2, grayArray);
+        //matrixToImage(blur,"test");
         return new boolean[0][];
     }
 
@@ -23,7 +26,7 @@ public class CannyEdgeDetector implements EdgeDetector {
 
     }
 
-    public static BufferedImage convertToGrayScale(BufferedImage image) throws IOException {
+    private static BufferedImage convertToGrayScale(BufferedImage image) throws IOException {
         BufferedImage result = new BufferedImage(
                 image.getWidth(),
                 image.getHeight(),
@@ -39,11 +42,11 @@ public class CannyEdgeDetector implements EdgeDetector {
     public BufferedImage matrixToImage(int[][] matrix,String name) throws IOException{
         int width = matrix.length;
         int height = matrix[0].length;
-        BufferedImage img = new BufferedImage(height,width,BufferedImage.TYPE_BYTE_GRAY);
+        BufferedImage img = new BufferedImage(width,height,BufferedImage.TYPE_BYTE_GRAY);
         for (int i=0;i<width;i++){
             for (int j=0;j<height;j++){
                 Color gray = new Color(matrix[i][j],matrix[i][j],matrix[i][j]);
-                img.setRGB(j,i,gray.getRGB());
+                img.setRGB(i,j,gray.getRGB());
             }
         }
         File output = new File(name+".jpg");
@@ -53,11 +56,11 @@ public class CannyEdgeDetector implements EdgeDetector {
     private int[][] imageToMatrix(BufferedImage img){
         int width = img.getWidth();
         int height = img.getHeight();
-        int[][] matrix = new int[height][width];
+        int[][] matrix = new int[width][height];
         for (int i=0;i<width;i++){
             for (int j=0;j<height;j++){
                 Color c = new Color(img.getRGB(i,j));
-                matrix[j][i] = c.getRed();
+                matrix[i][j] = c.getRed();
             }
         }
         return matrix;
@@ -70,8 +73,23 @@ public class CannyEdgeDetector implements EdgeDetector {
         }
     }
 
-    private int[][] convolve(int[][] mask, int[][] img){
-        int radius = mask.length/2;
-        int width = img
+    private int[][] blur(double sigma,int radius, int[][] img){
+        int[][] blurMask = new int[(2*radius)+1][(2*radius)+1];
+        for (int i =0;i<(2*radius)+1;i++){
+            for (int j=0;j<(2*radius)+1;j++){
+                blurMask[i][j] = (int)((1/(2*Math.PI*sigma*sigma))*Math.exp(-(((i-radius)*(i-radius)+
+                        (j-radius)*(j-radius))/(2*sigma*sigma))));
+            }
+        }
+        printMatrix(blurMask);
+        int width = img.length;
+        int height = img[0].length;
+        int[][] result = new int[width-2*radius][height-2*radius];
+        for (int w=0;w<width-2*radius;w++){
+            for (int h=0;h<height-2*radius;h++){
+
+            }
+        }
+        return result;
     }
 }
