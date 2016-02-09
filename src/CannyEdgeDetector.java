@@ -23,6 +23,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         matrixToImage(blur,"Post Gaussian Blur");
         int[][] xGradient = convolution(sobelX, blur);
         int[][] yGradient = convolution(sobelY, blur);
+        int[][] gradient = gradientMagnitudes(xGradient,yGradient);
         return new boolean[0][];
     }
 
@@ -137,7 +138,15 @@ public class CannyEdgeDetector implements EdgeDetector {
         }
         return result;
     }
-    private int[][] gradientMagnitudes(){
-        
+    private int[][] gradientMagnitudes(int[][] xGrad, int[][] yGrad){
+        int width = xGrad.length;
+        int height = xGrad[0].length;
+        int[][] gradient = new int[width][height];
+        for (int i = 0;i<width;i++){
+            for (int j=0;j<height;j++){
+                gradient[i][j] = (int)Math.sqrt((double)(xGrad[i][j]*xGrad[i][j])+(yGrad[i][j]*yGrad[i][j]));
+            }
+        }
+        return gradient;
     }
 }
