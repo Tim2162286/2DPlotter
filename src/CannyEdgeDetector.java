@@ -15,7 +15,7 @@ public class CannyEdgeDetector implements EdgeDetector {
     private BufferedImage image;
 
     public boolean[][] getEdgeMatrix() throws IOException {
-        File output = new File("C:\\Users\\Tim\\IdeaProjects\\Test\\src\\Images\\Base Image.jpg");
+        File output = new File("src\\Images\\Base Image.jpg");
         ImageIO.write(image, "jpg", output);
         BufferedImage grayImg = convertToGrayScale(image);
         int[][] sobelX = {{-1,0,1},{-2,0,2},{-1,0,1}};
@@ -38,7 +38,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         Graphics g = result.getGraphics();
         g.drawImage(image, 0, 0, null);
         g.dispose();
-        File output = new File("C:\\Users\\Tim\\IdeaProjects\\Test\\src\\Images\\GrayScaled.jpg");
+        File output = new File("src\\Images\\GrayScaled.jpg");
         ImageIO.write(result, "jpg", output);
         return result;
     }
@@ -53,7 +53,7 @@ public class CannyEdgeDetector implements EdgeDetector {
                 img.setRGB(i,j,gray.getRGB());
             }
         }
-        File output = new File("C:\\Users\\Tim\\IdeaProjects\\Test\\src\\Images\\"+name+".jpg");
+        File output = new File("src\\Images\\"+name+".jpg");
         ImageIO.write(img, "jpg", output);
         return img;
     }
