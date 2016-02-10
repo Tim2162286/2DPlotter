@@ -48,6 +48,13 @@ public class ParametricSplineInterpolator implements SplineGenerator {
 
     }
 
+    /**
+     * Gets a list of points that are withing the sensitivity limit around a point
+     * @param x x coordinate to search around
+     * @param y y coordinate to search around
+     * @param available 2D array containing the available pixels
+     * @return list of points in the surrounding area
+     */
     private ArrayList<int[]> getSurrounding(int x, int y, boolean[][] available){
         ArrayList<int[]> surrounding = new ArrayList<>();
         for(int i = x - SENSITIVITY; i <= x + SENSITIVITY; x++){
