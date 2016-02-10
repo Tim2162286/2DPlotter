@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Creates parametric splines from edge detection output
@@ -6,6 +7,9 @@ import java.util.ArrayList;
  * @since 2/9/2016
  */
 public class ParametricSplineInterpolator implements SplineGenerator {
+
+    private final int SENSITIVITY = 2;   //Number of pixels to search out for next point
+    private final int MIN_LINE_PX = 4;   //Disregard lines with fewer than this number of pixels
 
     private boolean[][] edgeMatrix;
 
@@ -32,4 +36,30 @@ public class ParametricSplineInterpolator implements SplineGenerator {
         int y = edgeMatrix[0].length/2;
     	return new ArrayList<>();
     }
+
+    /**
+     * Gets a list of edges and the points that compose them
+     * @return ArrayList containing one list of points for each line in the matrix
+     */
+    private ArrayList<ArrayList<int[]>> getEdgePoints(){
+        boolean[][] available = Arrays.copyOf(edgeMatrix, edgeMatrix.length);
+        getSurrounding(0,0,available);
+        return new ArrayList<>();
+
+    }
+
+    private ArrayList<int[]> getSurrounding(int x, int y, boolean[][] available){
+        ArrayList<int[]> surrounding = new ArrayList<>();
+        for(int i = x - SENSITIVITY; i <= x + SENSITIVITY; x++){
+            for(int j = y - SENSITIVITY; j <= y + SENSITIVITY; y++){
+                if(available[i][j]) {
+                    int point[] = {x, y};
+                    surrounding.add(point);
+                }
+            }
+        }
+        return surrounding;
+    }
+
+
 }
