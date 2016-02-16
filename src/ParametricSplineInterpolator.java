@@ -49,6 +49,27 @@ public class ParametricSplineInterpolator implements SplineGenerator {
     }
 
     /**
+     * Gets the point within the square that is closest to the angle
+     * @param x The x coordinate to search around
+     * @param y The y coordinate to search around
+     * @param direction The angle in radians from +x axis
+     * @param available Boolean 2-D array showing which points are available
+     * @return {x,y} coordinate of the best next point
+     */
+    private int[] getNextPoint(int x, int y, double direction, boolean[][] available){
+        ArrayList<int[]> surrounding = getSurrounding(x, y, available);
+        double minDistance = Math.PI;
+        int[] closest = {-1,-1};
+        for(int[] point : surrounding){
+            if(Math.abs(direction - Math.atan2(point[1], point[0])) < minDistance){
+                minDistance = Math.abs(direction - Math.atan2(point[1], point[0]));
+                closest = point;
+            }
+        }
+        return closest;
+    }
+
+    /**
      * Gets a list of points that are withing the sensitivity limit around a point
      * @param x x coordinate to search around
      * @param y y coordinate to search around
