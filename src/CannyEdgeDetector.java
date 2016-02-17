@@ -13,17 +13,15 @@ public class CannyEdgeDetector implements EdgeDetector {
     private BufferedImage image;
 
     public boolean[][] getEdgeMatrix() throws IOException {
+        int[][][] sobel = {{{-1,0,1},{-2,0,2},{-1,0,1}},{{1,2,1},{0,0,0},{-1,-2,-1}}};
+
         File output = new File("src\\Images\\Base Image.jpg");
         ImageIO.write(image, "jpg", output);
         BufferedImage grayImg = convertToGrayScale(image);
-        int[][] sobelX = {{-1,0,1},{-2,0,2},{-1,0,1}};
-        int[][] sobelY = {{1,2,1},{0,0,0},{-1,-2,-1}};
         int[][] grayArray = imageToMatrix(grayImg);
-        int[][] blur = blur(1.41, 2, grayArray);
+        int[][] blur = blur(1.41, 1, grayArray);
         matrixToImage(blur,"Step 2-Blur");
-        int[][] xGradient = convolution(sobelX, blur);
-        int[][] yGradient = convolution(sobelY, blur);
-        int[][][] gradient = gradientMagnitudes(xGradient,yGradient);
+        int[][][] gradient = gradientMagnitudes(blur,sobel);
         //printMatrix(gradient);
         return new boolean[0][];
     }
@@ -64,10 +62,10 @@ public class CannyEdgeDetector implements EdgeDetector {
         int width = img.getWidth();
         int height = img.getHeight();
         int[][] matrix = new int[width][height];
-        for (int i=0;i<width;i++){
-            for (int j=0;j<height;j++){
-                Color c = new Color(img.getRGB(i,j));
-                matrix[i][j] = c.getRed();
+        for (int y=0;y<height;y++){
+            for (int x=0;x<width;x++){
+                Color c = new Color(img.getRGB(x,y));
+                matrix[x][y] = c.getRed();
             }
         }
         return matrix;
@@ -82,6 +80,8 @@ public class CannyEdgeDetector implements EdgeDetector {
 
     private int[][] blur(double sigma,int radius, int[][] img){
         int diameter = (2*radius)+1;
+        int width = img.length;
+        int height = img[0].length;
         int[][] blurMask = new int[diameter][diameter];
         double multiplier = 2/((1/(2*Math.PI*sigma*sigma))*Math.exp(-(((-radius)*(-radius)+
                 (-radius)*(-radius))/(2*sigma*sigma))));
@@ -97,10 +97,6 @@ public class CannyEdgeDetector implements EdgeDetector {
             }
         }
 
-        //printMatrix(blurMask);
-        //System.out.println(sum);
-        int width = img.length;
-        int height = img[0].length;
         int[][] result = new int[width-2*radius][height-2*radius];
         int blockVal;
         for (int w=0;w<width-2*radius;w++){
@@ -118,45 +114,53 @@ public class CannyEdgeDetector implements EdgeDetector {
         return result;
     }
 
-    private int[][] convolution(int[][] mask, int[][] img){
-        int radius = mask.length/2;
-        int diameter = (2*radius)+1;
+    private int[][][] gradientMagnitudes(int[][] img, int[][][] operator)throws IOException{
         int width = img.length;
         int height = img[0].length;
+        int radius = operator[0][0].length/2;
+        int diameter = operator[0][0].length;
         int[][] result = new int[width-2*radius][height-2*radius];
         int blockVal;
-        for (int w=0;w<width-2*radius;w++){
-            for (int h=0;h<height-2*radius;h++){
-                blockVal=0;
-                for (int i=0;i<diameter;i++){
-                    for (int j=0;j<diameter;j++){
-                        blockVal += img[w+i][h+j]*mask[i][j];
+        int[][] gradX;
+        int[][] gradY;
+        for (int w = 0; w < width - 2 * radius; w++) {
+            for (int h = 0; h < height - 2 * radius; h++) {
+                blockVal = 0;
+                for (int i = 0; i < diameter; i++) {
+                    for (int j = 0; j < diameter; j++) {
+                        blockVal += img[w + i][h + j] * operator[0][i][j];
+                        }
+                    }
+                    result[w][h] = blockVal;
+                }
+            }
+        gradX = result;
+        for (int w = 0; w < width - 2 * radius; w++) {
+            for (int h = 0; h < height - 2 * radius; h++) {
+                blockVal = 0;
+                for (int i = 0; i < diameter; i++) {
+                    for (int j = 0; j < diameter; j++) {
+                        blockVal += img[w + i][h + j] * operator[1][i][j];
                     }
                 }
                 result[w][h] = blockVal;
-
             }
         }
-        return result;
-    }
-    private int[][][] gradientMagnitudes(int[][] xGrad, int[][] yGrad)throws IOException{
-        int width = xGrad.length;
-        int height = xGrad[0].length;
+        gradY = result;
         int[][] gradientMag = new int[width][height];
         int[][] gradientDirection = new int[width][height];
-        int direction;
+        double direction;
         int mag;
-        for (int i = 0;i<width;i++){
-            for (int j=0;j<height;j++){
-                mag = (int)Math.sqrt((double)(xGrad[i][j]*xGrad[i][j])+(yGrad[i][j]*yGrad[i][j]));
+        for (int y=0;y<height-2*radius;y++){
+            for (int x = 0;x<width-2*radius;x++){
+                mag = (int)Math.sqrt((double)((gradX[x][y]*gradX[x][y])+(gradY[x][y]*gradY[x][y])));
                 if (mag>255)
                     mag = 255;
-                gradientMag[i][j] = mag;
-                direction =  (int)Math.toDegrees(Math.atan2(yGrad[i][j],xGrad[i][j]));
-                //if (direction<)
-                //System.out.print(direction+" ");
+                gradientMag[x][y] = mag;
+                direction = (int)Math.abs(Math.toDegrees(Math.atan2(gradX[x][y],gradY[x][y]))/45);
+                direction *= 45;
+
             }
-            //System.out.print("\n");
         }
         matrixToImage(gradientMag,"Step 3-Find Gradient");
         return new int[0][0][];
