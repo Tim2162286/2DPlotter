@@ -12,6 +12,20 @@ public class CannyEdgeDetector implements EdgeDetector {
 
     private BufferedImage image;
 
+    public boolean[][] getEdgeMatrix(int blurRadius,double blurLevel) throws IOException {
+        int[][][] sobel = {{{-1,0,1},{-2,0,2},{-1,0,1}},{{1,2,1},{0,0,0},{-1,-2,-1}}};
+
+        File output = new File("src\\Images\\Base Image.jpg");
+        ImageIO.write(image, "jpg", output);
+        BufferedImage grayImg = convertToGrayScale(image);
+        int[][] grayArray = imageToMatrix(grayImg);
+        int[][] blur = blur(blurLevel, blurRadius, grayArray);
+        matrixToImage(blur,"Step 2-Blur");
+        int[][][] gradient = gradientMagnitudes(blur,sobel);
+        //printMatrix(gradient);
+        return new boolean[0][];
+    }
+
     public boolean[][] getEdgeMatrix() throws IOException {
         int[][][] sobel = {{{-1,0,1},{-2,0,2},{-1,0,1}},{{1,2,1},{0,0,0},{-1,-2,-1}}};
 
@@ -19,7 +33,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         ImageIO.write(image, "jpg", output);
         BufferedImage grayImg = convertToGrayScale(image);
         int[][] grayArray = imageToMatrix(grayImg);
-        int[][] blur = blur(1.41, 1, grayArray);
+        int[][] blur = blur(1.41, 2, grayArray);
         matrixToImage(blur,"Step 2-Blur");
         int[][][] gradient = gradientMagnitudes(blur,sobel);
         //printMatrix(gradient);
@@ -31,7 +45,7 @@ public class CannyEdgeDetector implements EdgeDetector {
 
     }
 
-    private static BufferedImage convertToGrayScale(BufferedImage image) throws IOException {
+    private BufferedImage convertToGrayScale(BufferedImage image) throws IOException {
         BufferedImage result = new BufferedImage(
                 image.getWidth(),
                 image.getHeight(),
@@ -44,7 +58,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         return result;
     }
 
-    public BufferedImage matrixToImage(int[][] matrix,String name) throws IOException{
+    private BufferedImage matrixToImage(int[][] matrix,String name) throws IOException{
         int width = matrix.length;
         int height = matrix[0].length;
         BufferedImage img = new BufferedImage(width,height,BufferedImage.TYPE_BYTE_GRAY);
@@ -147,6 +161,7 @@ public class CannyEdgeDetector implements EdgeDetector {
             }
         }
         gradY = result;
+        int[][][] gradient = new int[2][][];
         int[][] gradientMag = new int[width][height];
         int[][] gradientDirection = new int[width][height];
         double direction;
@@ -158,11 +173,14 @@ public class CannyEdgeDetector implements EdgeDetector {
                     mag = 255;
                 gradientMag[x][y] = mag;
                 direction = (int)Math.abs(Math.toDegrees(Math.atan2(gradX[x][y],gradY[x][y]))/45);
-                direction *= 45;
+                gradientDirection[x][y] = (int)direction*45;
 
             }
         }
+        gradient[0] = gradientMag;
+        gradient[1] = gradientDirection;
         matrixToImage(gradientMag,"Step 3-Find Gradient");
-        return new int[0][0][];
+        return gradient;
     }
+
 }
