@@ -11,5 +11,6 @@ public class SplineControl {
     public static void main(String[] args){
         SplineGenerator parametric = new ParametricSplineInterpolator();
         parametric.setEdgeMatrix(new boolean[4][4]);
+        ParametricSplineWriter psWriter = new ParametricSplineWriter();
     }
 }
