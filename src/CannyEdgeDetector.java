@@ -6,32 +6,62 @@ import java.io.IOException;
 
 
 /**
- * Created by Tim on 2/8/2016.
+ * Preforms Canny edge detection on an image.
+ * @author Tim Cuprak
+ * @since 2/8/2016
  */
 public class CannyEdgeDetector implements EdgeDetector {
 
     private BufferedImage image;
 
-    public boolean[][] getEdgeMatrix() throws IOException {
+    /**
+     * Calls
+     * @param blurRadius int radius of the mask used to preform gaussian blur.
+     * @param blurLevel double sigma value of th gaussian blur used to generate matrix.
+     * @return 2D boolean array, values are true if an edge, false if not.
+     * @throws IOException
+     */
+    public boolean[][] getEdgeMatrix(int blurRadius,double blurLevel) throws IOException {
         int[][][] sobel = {{{-1,0,1},{-2,0,2},{-1,0,1}},{{1,2,1},{0,0,0},{-1,-2,-1}}};
 
         File output = new File("src\\Images\\Base Image.jpg");
         ImageIO.write(image, "jpg", output);
         BufferedImage grayImg = convertToGrayScale(image);
         int[][] grayArray = imageToMatrix(grayImg);
-        int[][] blur = blur(1.41, 1, grayArray);
+        int[][] blur = blur(blurLevel, blurRadius, grayArray);
         matrixToImage(blur,"Step 2-Blur");
         int[][][] gradient = gradientMagnitudes(blur,sobel);
         //printMatrix(gradient);
         return new boolean[0][];
     }
 
+    /**
+     * Calls getEdgeMatrix with default values of 2 and 1.41
+     * @throws IOException
+     */
+    public void getEdgeMatrix() throws IOException {
+        getEdgeMatrix(2, 1.41);
+
+    }
+
+    /**
+     * Stores image to the local private variable image
+     * @param img BufferedImage to process
+     */
+
     public void loadImage(BufferedImage img){
         this.image = img;
 
     }
 
-    private static BufferedImage convertToGrayScale(BufferedImage image) throws IOException {
+    /**
+     * Copies the image to a buffered image set to greyscale.
+     * @param image BufferedImage image to copy into greyscale image.
+     * @return BufferedImage Greyscale copy of original image.
+     * @throws IOException
+     */
+
+    private BufferedImage convertToGrayScale(BufferedImage image) throws IOException {
         BufferedImage result = new BufferedImage(
                 image.getWidth(),
                 image.getHeight(),
@@ -44,7 +74,15 @@ public class CannyEdgeDetector implements EdgeDetector {
         return result;
     }
 
-    public BufferedImage matrixToImage(int[][] matrix,String name) throws IOException{
+    /**
+     * Converts a 2D integer matrix containing integer values between and including 0-255
+     * into a buffered image object, and saves it to a new JPEG file.
+     * @param matrix int[][] contains values 0-255
+     * @param name name to save file as.
+     * @throws IOException
+     */
+
+    private void matrixToImage(int[][] matrix,String name) throws IOException{
         int width = matrix.length;
         int height = matrix[0].length;
         BufferedImage img = new BufferedImage(width,height,BufferedImage.TYPE_BYTE_GRAY);
@@ -56,8 +94,14 @@ public class CannyEdgeDetector implements EdgeDetector {
         }
         File output = new File("src\\Images\\"+name+".jpg");
         ImageIO.write(img, "jpg", output);
-        return img;
     }
+
+    /**
+     * Converts a BufferedImage to a 2D integer array of values 0-255
+     * @param img BufferedImage image to convert to a matrix.
+     * @return int[][] 2D array of values 0-255 of the same dimensions as the image.
+     */
+
     private int[][] imageToMatrix(BufferedImage img){
         int width = img.getWidth();
         int height = img.getHeight();
@@ -70,13 +114,14 @@ public class CannyEdgeDetector implements EdgeDetector {
         }
         return matrix;
     }
-    private void printMatrix(int[][] matrix){
-        for (int[] i:matrix){
-            for (int j:i)
-                System.out.print(j+" ");
-            System.out.print("\n");
-        }
-    }
+
+    /**
+     * Performs gaussian blur on a 2D matrix of the image using a matrix generated based on radius and sigma parameters.
+     * @param sigma double sigma value used to generate blur matrix.
+     * @param radius int radius of the blur matrix to be generated.
+     * @param img int[][] 2D matrix of values 0-255.
+     * @return int[][] 2D matrix of values 0-255.
+     */
 
     private int[][] blur(double sigma,int radius, int[][] img){
         int diameter = (2*radius)+1;
@@ -114,6 +159,14 @@ public class CannyEdgeDetector implements EdgeDetector {
         return result;
     }
 
+    /**
+     * Calculates the gradient magnitude and gradient direction of each element of the image array
+     * @param img int[][] image matrix to find gradient of.
+     * @param operator int[][][] the 2 operators used to find the x and y gradients.
+     * @return int[][][] 3D array containing the gradient magnitude on layer 0, and gradient direction on layer 1
+     * @throws IOException
+     */
+
     private int[][][] gradientMagnitudes(int[][] img, int[][][] operator)throws IOException{
         int width = img.length;
         int height = img[0].length;
@@ -147,6 +200,7 @@ public class CannyEdgeDetector implements EdgeDetector {
             }
         }
         gradY = result;
+        int[][][] gradient = new int[2][][];
         int[][] gradientMag = new int[width][height];
         int[][] gradientDirection = new int[width][height];
         double direction;
@@ -158,11 +212,14 @@ public class CannyEdgeDetector implements EdgeDetector {
                     mag = 255;
                 gradientMag[x][y] = mag;
                 direction = (int)Math.abs(Math.toDegrees(Math.atan2(gradX[x][y],gradY[x][y]))/45);
-                direction *= 45;
+                gradientDirection[x][y] = (int)direction*45;
 
             }
         }
+        gradient[0] = gradientMag;
+        gradient[1] = gradientDirection;
         matrixToImage(gradientMag,"Step 3-Find Gradient");
-        return new int[0][0][];
+        return gradient;
     }
+
 }

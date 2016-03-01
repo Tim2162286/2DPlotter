@@ -13,12 +13,23 @@ public class EdgeDetectorControl {
 
         CannyEdgeDetector detector = new CannyEdgeDetector();
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-        //String directory = stdin.readLine();
-        //String file = stdin.readLine();
-        //File imgPath = new File(directory+"/"+file);
+        /*
+        String directory = stdin.readLine();
+        String file = stdin.readLine();
+        File imgPath = new File(directory+"/"+file);
+        */
         File imgPath = new File("C:/Users/Tim/Pictures/Test6.png");
         BufferedImage img = ImageIO.read(imgPath);
         detector.loadImage(img);
-        detector.getEdgeMatrix();
+        System.out.println("Use default args (2, 1.41)? y/n");
+        String useDefault = stdin.readLine().toUpperCase();
+        if (useDefault.equals("Y") || useDefault.equals("YES"))
+            detector.getEdgeMatrix();
+        else{
+            System.out.println("Enter th radius and sigma values separated by a space (ex. 2 1.41)");
+            String[] blurInf = stdin.readLine().split("\\s");
+            detector.getEdgeMatrix(Integer.parseInt(blurInf[0]),Double.parseDouble(blurInf[1]));
+        }
+
     }
 }
