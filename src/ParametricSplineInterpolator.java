@@ -59,6 +59,10 @@ public class ParametricSplineInterpolator implements SplineGenerator {
         return generateToolpathRecursive(findLinesSpiral(bwState));
     }
 
+    /**
+     * Sets the matrix containing the edges to be processed
+     * @param matrix Boolean matrix with true on edges
+     */
     public void setEdgeMatrix(boolean[][] matrix){
         bwState = matrix;
     }
