@@ -285,8 +285,8 @@ public class ParametricSplineInterpolator implements SplineGenerator {
                 int dy0 = points.get(i)[1] - points.get(i-1)[1];
                 int dx1 = points.get(i+1)[0] - points.get(i)[0];
                 int dy1 = points.get(i+1)[1] - points.get(i)[1];
-                double mag0 = Math.sqrt(Math.pow(dx0,2) + Math.pow(dy0,2));
-                double mag1 = Math.sqrt(Math.pow(dx1,2) + Math.pow(dy1,2));
+                double mag0 = Math.sqrt(dx0*dx0 + dy0*dy0);
+                double mag1 = Math.sqrt(dx1*dx1 + dy1*dy1);
                 double i0 = dx0/mag0;
                 double j0 = dy0/mag0;
                 double i1 = dx1/mag1;
