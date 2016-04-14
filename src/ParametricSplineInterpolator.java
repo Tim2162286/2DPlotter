@@ -3,7 +3,7 @@
  * a toolpath consisting of points from a JPEG image 
  * and save it to a text file.
  * @author Jonathan Bush
- * @version 2015.5.17
+ * @since 2016-01-20
  */
 
 import java.util.ArrayList;
