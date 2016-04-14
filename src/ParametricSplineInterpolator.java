@@ -6,13 +6,11 @@
  * @version 2015.5.17
  */
 
-import java.io.*;
 import java.util.ArrayList;
 
 public class ParametricSplineInterpolator implements SplineGenerator {
 
-    private int maxDist;
-    private int edgeDist;
+    private int minDist;
     private int xDim;
     private int yDim;
     private double pathScale;
@@ -20,23 +18,20 @@ public class ParametricSplineInterpolator implements SplineGenerator {
 
     /**
      * Construct a new ParametricSplineInterpolator object
-     * @param edgeDist color difference to define an edge
-     * @param maxDist maximum line segment length
+     * @param resolution minimum line segment length
      */
-    public ParametricSplineInterpolator(int edgeDist, int maxDist){
-        this.maxDist = maxDist;
-        this.edgeDist = edgeDist;
+    public ParametricSplineInterpolator(int resolution) {
+        this.minDist = resolution;
     }
 
     /**
      * Construct a new ParametricSplineInterpolator object
-     * @param edgeDist color difference to define and edge
-     * @param maxDist maximum line segment length
+     * @param minDist maximum line segment length
      * @param xDim X dimension of the plotter bed or desired size.
      * @param yDim Y dimension of the plotter bed or desired size.
      */
-    public ParametricSplineInterpolator(int edgeDist, int maxDist, int xDim, int yDim){
-        this(edgeDist, maxDist);
+    public ParametricSplineInterpolator(int minDist, int xDim, int yDim) {
+        this(minDist);
         this.xDim = xDim;
         this.yDim = yDim;
         pathScale = 1.0;
@@ -44,28 +39,24 @@ public class ParametricSplineInterpolator implements SplineGenerator {
 
     /**
      * Default constructor
-     * maxDist = 10
+     * minDist = 10
      * edgeDist = 15
      */
     public ParametricSplineInterpolator(){
-        this.maxDist = 10;
-        this.edgeDist = 15;
+        this.minDist = 10;
     }
 
     /**
      * Generate a toolpath from image and save it to pathFile
-     * @param image the Picture to be processed
-     * @param pathFile the File where the toolpath should be saved
      */
-    public ArrayList<ArrayList<Double[]>> getCoefficients(int resolution) {
+    public ArrayList<ArrayList<Integer[]>> getSpline() {
         pathScale = (double)yDim/(double)bwState.length;
-        if(pathScale*bwState[0].length > xDim){
+        if(pathScale*bwState[0].length > xDim) {
             pathScale = (double)xDim/(double)bwState[0].length;
         }
         removeSingle(bwState);
-        ArrayList<Integer[]> toolpath = generateToolpathRecursive(findLinesSpiral(bwState));
-        writeToolpath(toolpath);
-        return new ArrayList<ArrayList<Double[]>>();
+
+        return generateToolpathRecursive(findLinesSpiral(bwState));
     }
 
     public void setEdgeMatrix(boolean[][] matrix){
@@ -92,65 +83,28 @@ public class ParametricSplineInterpolator implements SplineGenerator {
     }
 
     /**
-     * Write the complete toolpath ArrayList to a file
-     * @param xyz ArrayList<Integer[]> containing ordered coordinates of the path
-     */
-    private ArrayList<ArrayList<Double[]>> writeToolpath(ArrayList<Integer[]> xyz) {
-
-        int count = 0;
-        for(Integer[] step : xyz){
-            for(int i = 0; i < 2; i++){
-                int n = (int)(pathScale*step[i]);
-
-            }
-        }
-        return new ArrayList<ArrayList<Double[]>>();
-    }
-
-    /**
      * Generate the toolpath from the output of the findLinesRecursive method.
      * @param pointSets ArrayList<ArrayList<Integer[]>> containing sets of Integer {x,y} coordinates
      *    for each point in each line.
-     * @return ArrayList<Integer[]> of {x,y,z} coordinates
+     * @return ArrayList of {x,y,z} coordinates
      */
-    private ArrayList<Integer[]> generateToolpathRecursive(ArrayList<ArrayList<Integer[]>> pointSets){
-        //ArrayList<Integer[]> path = new ArrayList<Integer[]>();
+    private ArrayList<ArrayList<Integer[]>> generateToolpathRecursive(ArrayList<ArrayList<Integer[]>> pointSets){
 
-        ArrayList<Integer[]> sub = null;
-        for(int i = 0; i < pointSets.size(); i++){
+        for (ArrayList<Integer[]> sub : pointSets) {  // for each line in the set of points
             int count = 0;
-            sub = pointSets.get(i);
-            for(int j = 1; j < pointSets.get(i).size() - 1; j++){
-                count++;
-                if(count % maxDist != 0){
+            for (int j = 1; j < sub.size() - 1; j++) {  // don't remove the first and last points
+                //count++;
+                if (++count % minDist != 0) {
                     sub.remove(j);
                     j--;
                 }
             }
         }
 
-        removeIntermediate(pointSets);  //remove unnecessary points
+        removeIntermediate(pointSets);  //remove unnecessary points on straight lines
 
-        ArrayList<Integer[]> path = new ArrayList<Integer[]>();
+        return pointSets;
 
-        for(int i = 0; i < pointSets.size(); i++){
-            sub = pointSets.get(i);
-            Integer[] temp = new Integer[3];
-            temp[0] = sub.get(0)[0];
-            temp[1] = sub.get(0)[1];
-            temp[2] = 0;
-            path.add(temp);
-            //System.out.println("0: " + Arrays.toString(temp));
-            for(int j = 1; j <pointSets.get(i).size(); j++){
-                temp = new Integer[3];
-                temp[0] = sub.get(j)[0];
-                temp[1] = sub.get(j)[1];
-                temp[2] = 1;
-                path.add(temp);
-                //System.out.println(j + ": " + Arrays.toString(temp));
-            }
-        }
-        return path;
     }
 
     /**
@@ -158,15 +112,14 @@ public class ParametricSplineInterpolator implements SplineGenerator {
      * @param bwState The 2D boolean array representing the states of pixels
      * @param x column coordinate to be checked
      * @param y row coordinate to be checked
-     * @return int array containing {x,y} if a neighboring pixel is true
-    returns {-1,-1} if no neighboring pixel is false
+     * @return int array containing {x,y} if a neighboring pixel is true, {-1,-1} if no neighboring pixel is true
      */
-    private int[] findAdjacent(boolean[][] bwState, int x, int y){
-        for(int dx = -1; dx < 2; dx++){
-            for(int dy = -1; dy < 2; dy++){
-                if(!(dx == 0 && dy == 0)){
-                    if(x + dx >= 0 && x + dx < bwState[0].length && y + dy >= 0 && y + dy < bwState.length){
-                        if(bwState[y + dy][x + dx]){
+    private int[] findAdjacent(boolean[][] bwState, int x, int y) {
+        for (int dx = -1; dx < 2; dx++) {
+            for (int dy = -1; dy < 2; dy++) {
+                if (!(dx == 0 && dy == 0)) {  // If this is not the center point
+                    if (x + dx >= 0 && x + dx < bwState[0].length && y + dy >= 0 && y + dy < bwState.length) {
+                        if (bwState[y + dy][x + dx]) {
                             int[] adj = new int[2];
                             adj[0] = x + dx;
                             adj[1] = y + dy;
@@ -176,8 +129,7 @@ public class ParametricSplineInterpolator implements SplineGenerator {
                 }
             }
         }
-        int[] adj = {-1,-1};
-        return adj;
+        return new int[] {-1,-1};
     }
 
     /**
@@ -185,10 +137,10 @@ public class ParametricSplineInterpolator implements SplineGenerator {
      * this way the plotter won't plot individual points or anomalies.
      * @param bwState the 2D array representing the states of the pixels
      */
-    private void removeSingle(boolean[][] bwState){
-        for(int y = 0; y < bwState.length; y++){
-            for(int x = 0; x < bwState[0].length; x++){
-                if(bwState[y][x]){
+    private void removeSingle(boolean[][] bwState) {
+        for (int y = 0; y < bwState.length; y++) {
+            for (int x = 0; x < bwState[0].length; x++) {
+                if (bwState[y][x]){
                     int[] temp = findAdjacent(bwState, x, y);
                     if(temp[0] == -1){
                         bwState[y][x] = false;
@@ -203,27 +155,26 @@ public class ParametricSplineInterpolator implements SplineGenerator {
      * @param bwState 2D array representing states of pixels
      * @return modified bwState after changes
      */
-    private boolean[][] removeEncased(boolean[][] bwState){
+    private boolean[][] removeEncased(boolean[][] bwState) {
         boolean[][] state = new boolean[bwState.length][bwState[0].length];
         System.arraycopy(bwState, 0, state, 0, bwState.length);
         int count;
-        for(int x = 1; x < state[0].length; x++){
-            for(int y = 1; y < state.length; y++){
+        for (int x = 1; x < state[0].length; x++) {
+            for (int y = 1; y < state.length; y++) {
                 count = 0;
-                for(int dx = -1; dx < 2; dx++){
-                    for(int dy = -1; dy < 2; dy++){
-                        if(dx != 0 || dy != 0){
-                            if(x + dx >= 0 && x + dx < bwState[0].length
-                                    && y + dy >= 0 && y + dy < bwState.length){
-                                if(state[y + dy][x + dx]){
-                                    //System.out.println("here");
+                for (int dx = -1; dx < 2; dx++){
+                    for (int dy = -1; dy < 2; dy++) {
+                        if (dx != 0 || dy != 0) {
+                            if (x + dx >= 0 && x + dx < bwState[0].length
+                                    && y + dy >= 0 && y + dy < bwState.length) {
+                                if (state[y + dy][x + dx]) {
                                     count++;
                                 }
                             }
                         }
                     }
                 }
-                if(count == 9){
+                if (count == 9) {
                     bwState[y][x] = false;
                 }
             }
@@ -247,11 +198,8 @@ public class ParametricSplineInterpolator implements SplineGenerator {
         points.add(adjObj);
         bwState[y][x] = false;
         int[] adj = findAdjacent(bwState, x, y);
-        if(adj[0] != -1){
-            return findLine(bwState, points,adj[0], adj[1]);
-        } else {
-            return points;
-        }
+
+        return (adj[0] != -1) ? findLine(bwState, points, adj[0], adj[1]) : points;
     }
 
     /**
@@ -274,10 +222,7 @@ public class ParametricSplineInterpolator implements SplineGenerator {
      * @param y starting y coordinate
      * @return pointSets after all lines have been found
      */
-    public ArrayList<ArrayList<Integer[]>> findLinesSpiralHelper(boolean[][] bwState,
-                                                                 ArrayList<ArrayList<Integer[]>> pointSets, int x, int y){
-
-        //int pixelsTested;
+    public ArrayList<ArrayList<Integer[]>> findLinesSpiralHelper(boolean[][] bwState, ArrayList<ArrayList<Integer[]>> pointSets, int x, int y){
         boolean pixelOn = false;
         int length = 2;
         int pixelsTested = 0;
@@ -288,7 +233,7 @@ public class ParametricSplineInterpolator implements SplineGenerator {
             y++;
             do {
                 count++;
-                switch(i){
+                switch (i) {
                     case 0:
                         x++;
                         break;
@@ -302,25 +247,20 @@ public class ParametricSplineInterpolator implements SplineGenerator {
                         y++;
                         break;
                 }
-
-                //System.out.println("(" + x + ", " + y + ") " + i);
-                if(x >= 0 && y >= 0 && x < bwState[0].length && y < bwState.length){
-                    pixelsTested++;
-                    pixelOn = bwState[y][x];
+                if (x >= 0 && y >= 0 && x < bwState[0].length && y < bwState.length) {  // (x,y) is inside the image
+                    pixelsTested++;  // count the number of pixels tested so we know when we are done
+                    pixelOn = bwState[y][x];   // set this for use in the loop condition
                 }
-                if(count == length){
-                    count = 0;
+                if(count == length){  // once the current side length is reached
+                    count = 0;  // reset the count and increment to the next side
                     i++;
                 }
-            } while(i < 4  && !pixelOn);
-            length += 2;
+            } while(i < 4  && !pixelOn);  // go around the whole square, unless a point is found
+            length += 2;  // increase the spiral side length by two
         } while(pixelsTested < bwState.length*bwState[0].length && !pixelOn);
         if(pixelOn){
-            //System.out.println("lljljkljlj");
             pointSets.add(findLine(bwState, new ArrayList<Integer[]>(), x, y));
-            removeSingle(bwState);
-            Integer[] temp = pointSets.get(pointSets.size() - 1).get(pointSets.get(pointSets.size() - 1).size() -1);
-            //System.out.println("(" + temp[0] + ", " + temp[1] + ") " + countTrue(bwState));
+            removeSingle(bwState);  // remove any points that are by themselves
         }
         if(countTrue(bwState) != 0){
             Integer[] temp = pointSets.get(pointSets.size() - 1).get(pointSets.get(pointSets.size() - 1).size() -1);
@@ -330,7 +270,7 @@ public class ParametricSplineInterpolator implements SplineGenerator {
         }
     }
 
-    /**
+    /** Needs to be changed
      * Removes intermediate points on each straight line.
      * @param pointSets The collection of lines composed of points.
      */
@@ -347,7 +287,7 @@ public class ParametricSplineInterpolator implements SplineGenerator {
                 double j0 = dy0/mag0;
                 double i1 = dx1/mag1;
                 double j1 = dy1/mag1;
-                if(Math.abs(i1 - i0) < .001 && Math.abs(j1 - j0) < .001){
+                if (Math.abs(i1 - i0) < .01 && Math.abs(j1 - j0) < .01) {
                     points.remove(i);
                     i--;
                 }
