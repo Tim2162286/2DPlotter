@@ -18,15 +18,16 @@ public class EdgeDetectorControl {
         String file = stdin.readLine();
         File imgPath = new File(directory+"/"+file);
         */
-        File imgPath = new File("C:/Users/Tim/Pictures/Test6.png");
+        File imgPath = new File("C:/Users/Tim/Pictures/Caves.jpg");
         BufferedImage img = ImageIO.read(imgPath);
         detector.loadImage(img);
         System.out.println("Use default args (2, 1.41)? y/n");
         String useDefault = stdin.readLine().toUpperCase();
+        //useDefault = "Y";
         if (useDefault.equals("Y") || useDefault.equals("YES"))
             detector.getEdgeMatrix();
         else{
-            System.out.println("Enter th radius and sigma values separated by a space (ex. 2 1.41)");
+            System.out.println("Enter the radius and sigma values separated by a space (ex. 2 1.41)");
             String[] blurInf = stdin.readLine().split("\\s");
             detector.getEdgeMatrix(Integer.parseInt(blurInf[0]),Double.parseDouble(blurInf[1]));
         }
