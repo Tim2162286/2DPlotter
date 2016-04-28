@@ -1,11 +1,11 @@
+import java.util.ArrayList;
+
 /**
  * The ParametricSplineInterpolator class is used to generate
  * a toolpath consisting of points taken from an edge detector.
  * @author Jonathan Bush
  * @since 2016-01-20
  */
-
-import java.util.ArrayList;
 
 public class ParametricSplineInterpolator implements SplineGenerator {
 
@@ -21,6 +21,8 @@ public class ParametricSplineInterpolator implements SplineGenerator {
      */
     public ParametricSplineInterpolator(int resolution) {
         this.minDist = resolution;
+        this.xDim = 1024;  // default dimensions
+        this.yDim = 1024;
     }
 
     /**
@@ -39,23 +41,23 @@ public class ParametricSplineInterpolator implements SplineGenerator {
     /**
      * Default constructor
      * minDist = 10
-     * edgeDist = 15
      */
     public ParametricSplineInterpolator(){
         this.minDist = 10;
     }
 
     /**
-     * Generate a toolpath from image and save it to pathFile
+     * Generate a toolpath from image and return the result
+     * @return The processed toolpath
      */
     public ArrayList<ArrayList<Integer[]>> getSpline() {
-        pathScale = (double)yDim/(double)bwState.length;
-        if(pathScale*bwState[0].length > xDim) {
+        pathScale = (double)yDim / (double)bwState.length;  // automatically set the scale to fit in the plotter
+        if(pathScale * bwState[0].length > xDim) {
             pathScale = (double)xDim/(double)bwState[0].length;
         }
-        removeSingle(bwState);
+        removeSingle(bwState);  // remove any points in the matrix
 
-        return generateToolpathRecursive(findLinesSpiral(bwState));
+        return generateToolpathRecursive(findLinesSpiral(bwState));  // generate the toolpath
     }
 
     /**
@@ -63,7 +65,13 @@ public class ParametricSplineInterpolator implements SplineGenerator {
      * @param matrix Boolean matrix with true on edges
      */
     public void setEdgeMatrix(boolean[][] matrix) {
-        bwState = matrix;
+        bwState = new boolean[matrix.length][matrix[0].length];
+        /* deep copy the matrix because bwState will be destroyed */
+        for(int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++) {
+                bwState[i][j] = matrix[i][j];
+            }
+        }
     }
 
     /**
@@ -96,7 +104,6 @@ public class ParametricSplineInterpolator implements SplineGenerator {
         for (ArrayList<Integer[]> sub : pointSets) {  // for each line in the set of points
             int count = 0;
             for (int j = 1; j < sub.size() - 1; j++) {  // don't remove the first and last points
-                //count++;
                 if (++count % minDist != 0) {
                     sub.remove(j);
                     j--;
@@ -126,13 +133,13 @@ public class ParametricSplineInterpolator implements SplineGenerator {
                             int[] adj = new int[2];
                             adj[0] = x + dx;
                             adj[1] = y + dy;
-                            return adj;
+                            return adj;  // return the point and exit immediately
                         }
                     }
                 }
             }
         }
-        return new int[] {-1,-1};
+        return new int[] {-1,-1};  // return the default point if none were found
     }
 
     /**
@@ -210,7 +217,7 @@ public class ParametricSplineInterpolator implements SplineGenerator {
      * @param bwState 2D array representing the pixel states in the image
      */
     public ArrayList<ArrayList<Integer[]>> findLinesSpiral(boolean[][] bwState){
-        return findLinesSpiralHelper(bwState, new ArrayList<ArrayList<Integer[]>>(), bwState[0].length/2,
+        return findLinesSpiralRecursive(bwState, new ArrayList<ArrayList<Integer[]>>(), bwState[0].length/2,
                 bwState.length/2);
     }
 
@@ -220,15 +227,16 @@ public class ParametricSplineInterpolator implements SplineGenerator {
      * thus minimizing the amount of pen movement required. Call recursively until all lines
      * have been found and added to the point sets.
      *
-     * I could probably do this iteratively
-     *
      * @param bwState 2D array representing the pixel states in the image
      * @param pointSets ArrayList<ArrayList<Integer[]>> object for storing lines and their points
      * @param x starting x coordinate
      * @param y starting y coordinate
      * @return pointSets after all lines have been found
      */
-    public ArrayList<ArrayList<Integer[]>> findLinesSpiralHelper(boolean[][] bwState, ArrayList<ArrayList<Integer[]>> pointSets, int x, int y){
+    public ArrayList<ArrayList<Integer[]>> findLinesSpiralRecursive(boolean[][] bwState,
+                                                                 ArrayList<ArrayList<Integer[]>> pointSets,
+                                                                 int x,
+                                                                 int y) {
         boolean pixelOn = false;
         int length = 2;
         int pixelsTested = 0;
@@ -237,7 +245,7 @@ public class ParametricSplineInterpolator implements SplineGenerator {
             int count = 0;
             x--;
             y++;
-            do {
+            do {  // this loops outward in a square spiral pattern
                 count++;
                 switch (i) {
                     case 0:
@@ -268,15 +276,20 @@ public class ParametricSplineInterpolator implements SplineGenerator {
             pointSets.add(findLine(bwState, new ArrayList<Integer[]>(), x, y));
             removeSingle(bwState);  // remove any points that are by themselves
         }
-        if (countTrue(bwState) != 0) {  // Recurse
+        if (countTrue(bwState) != 0) {  // Double-tail recursion
             Integer[] temp = pointSets.get(pointSets.size() - 1).get(pointSets.get(pointSets.size() - 1).size() -1);
             return findLinesSpiralHelper(bwState, pointSets, temp[0], temp[1]);
         } else {
-            return pointSets;
+            return pointSets;   // when there are no more points, return the result
         }
+        /*
+         * Note, this method could have been implemented iteratively, which would have most likely been more efficient.
+         * Due to time constraints, I have decided to retain the recursive method, which may limit the maximum line
+         * length depending on memory availability. This is not ideal, but should work in the vast majority of cases.
+         */
     }
 
-    /** Needs to be changed
+    /**
      * Removes intermediate points on each straight line.
      * @param pointSets The collection of lines composed of points.
      */
