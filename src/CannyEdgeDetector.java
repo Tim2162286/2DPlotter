@@ -22,16 +22,16 @@ public class CannyEdgeDetector implements EdgeDetector {
      * @throws IOException
      */
     public boolean[][] getEdgeMatrix(int blurRadius,double blurLevel) throws IOException {
-        int[][][] sobel = {{{-1,0,1},{-2,0,2},{-1,0,1}},{{1,2,1},{0,0,0},{-1,-2,-1}}};
+        int[][][] sobel = {{{-1,0,1},{-2,0,2},{-1,0,1}},
+                            {{1,2,1},{0,0,0},{-1,-2,-1}}};
 
         File output = new File("src\\Images\\Base Image.jpg");
         ImageIO.write(image, "jpg", output);
         BufferedImage grayImg = convertToGrayScale(image);
         int[][] grayArray = imageToMatrix(grayImg);
         int[][] blur = blur(blurLevel, blurRadius, grayArray);
-        matrixToImage(blur,"Step 2-Blur");
         int[][][] gradient = gradientMagnitudes(blur,sobel);
-        //printMatrix(gradient);
+        int[][] maximums = nonMximumSupression(gradient);
         return new boolean[0][];
     }
 
@@ -85,10 +85,14 @@ public class CannyEdgeDetector implements EdgeDetector {
     private void matrixToImage(int[][] matrix,String name) throws IOException{
         int width = matrix.length;
         int height = matrix[0].length;
+        int mag;
         BufferedImage img = new BufferedImage(width,height,BufferedImage.TYPE_BYTE_GRAY);
         for (int i=0;i<width;i++){
             for (int j=0;j<height;j++){
-                Color gray = new Color(matrix[i][j],matrix[i][j],matrix[i][j]);
+                mag = Math.abs(matrix[i][j]);
+                if (mag>255)
+                    mag=255;
+                Color gray = new Color(mag,mag,mag);
                 img.setRGB(i,j,gray.getRGB());
             }
         }
@@ -123,7 +127,7 @@ public class CannyEdgeDetector implements EdgeDetector {
      * @return int[][] 2D matrix of values 0-255.
      */
 
-    private int[][] blur(double sigma,int radius, int[][] img){
+    private int[][] blur(double sigma,int radius, int[][] img) throws IOException{
         int diameter = (2*radius)+1;
         int width = img.length;
         int height = img[0].length;
@@ -156,6 +160,7 @@ public class CannyEdgeDetector implements EdgeDetector {
 
             }
         }
+        matrixToImage(result,"Step 2-Blur");
         return result;
     }
 
@@ -172,34 +177,27 @@ public class CannyEdgeDetector implements EdgeDetector {
         int height = img[0].length;
         int radius = operator[0][0].length/2;
         int diameter = operator[0][0].length;
-        int[][] result = new int[width-2*radius][height-2*radius];
-        int blockVal;
-        int[][] gradX;
+        int[][] resultX = new int[width-2*radius][height-2*radius];
+        int blockValX;
+        int[][] resultY = new int[width-2*radius][height-2*radius];
+        int blockValY;                                              int[][] gradX;
         int[][] gradY;
         for (int w = 0; w < width - 2 * radius; w++) {
             for (int h = 0; h < height - 2 * radius; h++) {
-                blockVal = 0;
+                blockValX = 0;
+                blockValY = 0;
                 for (int i = 0; i < diameter; i++) {
                     for (int j = 0; j < diameter; j++) {
-                        blockVal += img[w + i][h + j] * operator[0][i][j];
-                        }
-                    }
-                    result[w][h] = blockVal;
-                }
-            }
-        gradX = result;
-        for (int w = 0; w < width - 2 * radius; w++) {
-            for (int h = 0; h < height - 2 * radius; h++) {
-                blockVal = 0;
-                for (int i = 0; i < diameter; i++) {
-                    for (int j = 0; j < diameter; j++) {
-                        blockVal += img[w + i][h + j] * operator[1][i][j];
+                        blockValX += img[w + i][h + j] * operator[0][i][j];
+                        blockValY += img[w + i][h + j] * operator[1][i][j];
                     }
                 }
-                result[w][h] = blockVal;
+                resultX[w][h] = blockValX;
+                resultY[w][h] = blockValY;
             }
         }
-        gradY = result;
+        gradX = resultX;
+        gradY = resultY;
         int[][][] gradient = new int[2][][];
         int[][] gradientMag = new int[width][height];
         int[][] gradientDirection = new int[width][height];
@@ -208,18 +206,97 @@ public class CannyEdgeDetector implements EdgeDetector {
         for (int y=0;y<height-2*radius;y++){
             for (int x = 0;x<width-2*radius;x++){
                 mag = (int)Math.sqrt((double)((gradX[x][y]*gradX[x][y])+(gradY[x][y]*gradY[x][y])));
-                if (mag>255)
-                    mag = 255;
                 gradientMag[x][y] = mag;
-                direction = (int)Math.abs(Math.toDegrees(Math.atan2(gradX[x][y],gradY[x][y]))/45);
+                direction = Math.round(Math.toDegrees(Math.atan2(gradY[x][y],gradX[x][y]))/45.0);
                 gradientDirection[x][y] = (int)direction*45;
-
             }
         }
         gradient[0] = gradientMag;
         gradient[1] = gradientDirection;
-        matrixToImage(gradientMag,"Step 3-Find Gradient");
+        matrixToImage(gradX,"Step 3a-X Gradient");
+        matrixToImage(gradY,"Step 3b-Y Gradient");
+        matrixToImage(gradientMag,"Step 3d-Find Gradient");
+        matrixToDirectionGradientImage(gradient,"Step 3c-Gradient Direction");
         return gradient;
+    }
+
+    /**
+     * Finds the center of a line by removing all but the strongest pixel in the direction of the gradient.
+     * @param gradient int[][][] 3d array, contains the gradient magnitude in position 0 and the gradient direction inn position 1
+     * @return int[][] 2D array of the center of each edge line.
+     * @throws IOException
+     */
+    int[][] nonMximumSupression(int[][][] gradient) throws IOException{
+        int[][] mag = gradient[0];
+        int[][] direction = gradient[1];
+        int width = mag.length;
+        int height = mag[0].length;
+        boolean[][] maximum = new boolean[width][height];
+        for(int w=1;w<width-1;w++){
+            for(int h=1;h<height-1;h++){
+                if ((direction[w][h]==0 || direction[w][h]==180 || direction[w][h]==-180) && mag[w][h]!=0){
+                    if ((mag[w][h]>mag[w][h+1] && mag[w][h]>mag[w][h-1]) || mag[w][h]==mag[w][h+1] || mag[w][h]==mag[w][h-1])
+                        maximum[w][h] = true;
+                }
+                else if (direction[w][h] == 45 || direction[w][h] == -135){
+                    if ((mag[w][h]>mag[w+1][h+1] && mag[w][h]>mag[w-1][h-1]) || mag[w][h]==mag[w+1][h+1] || mag[w][h]==mag[w-1][h-1])
+                        maximum[w][h] = true;
+                }
+                else if (direction[w][h] == 90 || direction[w][h] == -90){
+                    if ((mag[w][h]>mag[w+1][h] && mag[w][h]>mag[w-1][h]) || mag[w][h]==mag[w+1][h] || mag[w][h]==mag[w-1][h])
+                        maximum[w][h] = true;
+                }
+                else if (direction[w][h] == -45 || direction[w][h] == 135){
+                    if ((mag[w][h]>mag[w-1][h+1] && mag[w][h]>mag[w+1][h-1]) || mag[w][h]==mag[w-1][h+1] || mag[w][h]==mag[w+1][h-1])
+                        maximum[w][h] = true;
+                }
+            }
+        }
+        for(int w=0;w<width;w++){
+            for(int h=0;h<height;h++){
+                if(!maximum[w][h])
+                    mag[w][h] = 0;
+            }
+        }
+        matrixToImage(mag,"Step 4-Non-Maximum Suppression");
+        return mag;
+    }
+
+    /**
+     * Creates a colored image showing the direction of the gradients. blue is vertical, cyan is positive 45 degrees, green horizontal, and yellow, -45 degrees
+     * @param gradient int[][][] contains two 2D arrays, gradient[0] contains the magnitude of the gradients, gradient[1] contains the direction of the gradient
+     * @param name String name to call the image
+     * @throws IOException
+     */
+
+    void matrixToDirectionGradientImage(int[][][] gradient, String name)throws IOException{
+        int[][] direction = gradient[1];
+        int[][] mag = gradient[0];
+        int width = direction.length;
+        int height = direction[0].length;
+        Color color = new Color(0,0,0);
+        BufferedImage img = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
+        for (int i=0;i<width;i++){
+            for (int j=0;j<height;j++){
+
+                if (mag[i][j]==0)
+                    color = color.BLACK;
+                else if ((direction[i][j]==0 || direction[i][j]==180 || direction[i][j]==-180) && mag[i][j]!=0)
+                    color = Color.BLUE;
+                else if (direction[i][j]==-135 || direction[i][j]==45)
+                    color = Color.CYAN;
+                else if (direction[i][j]==90 || direction[i][j]==-90)
+                    color = Color.GREEN;
+                else if (direction[i][j]==-45 ||direction[i][j]==135)
+                    color = Color.YELLOW;
+                else{
+                    color = Color.RED;
+                }
+                img.setRGB(i,j,color.getRGB());
+            }
+        }
+        File output = new File("src\\Images\\"+name+".jpg");
+        ImageIO.write(img, "jpg", output);
     }
 
 }
