@@ -14,6 +14,6 @@ public interface SplineWriter {
      * @param image the file to save the generated image to
      * @param format the format to save the image as ("gif", "png", "jpg")
      */
-    public void splineToImage(ArrayList<ArrayList<Double[]>> splines, File image, String format);
+    public void splineToImage(ArrayList<ArrayList<Integer[]>> splines, File image, String format, int width, int height);
 
 }
