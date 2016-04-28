@@ -1,7 +1,6 @@
 /**
- * The ToolpathGenerator class is used to generate
- * a toolpath consisting of points from a JPEG image 
- * and save it to a text file.
+ * The ParametricSplineInterpolator class is used to generate
+ * a toolpath consisting of points taken from an edge detector.
  * @author Jonathan Bush
  * @since 2016-01-20
  */
@@ -63,7 +62,7 @@ public class ParametricSplineInterpolator implements SplineGenerator {
      * Sets the matrix containing the edges to be processed
      * @param matrix Boolean matrix with true on edges
      */
-    public void setEdgeMatrix(boolean[][] matrix){
+    public void setEdgeMatrix(boolean[][] matrix) {
         bwState = matrix;
     }
 
@@ -220,6 +219,9 @@ public class ParametricSplineInterpolator implements SplineGenerator {
      * This finds the nearest next line as opposed to starting from the upper left again,
      * thus minimizing the amount of pen movement required. Call recursively until all lines
      * have been found and added to the point sets.
+     *
+     * I could probably do this iteratively
+     *
      * @param bwState 2D array representing the pixel states in the image
      * @param pointSets ArrayList<ArrayList<Integer[]>> object for storing lines and their points
      * @param x starting x coordinate
@@ -266,7 +268,7 @@ public class ParametricSplineInterpolator implements SplineGenerator {
             pointSets.add(findLine(bwState, new ArrayList<Integer[]>(), x, y));
             removeSingle(bwState);  // remove any points that are by themselves
         }
-        if(countTrue(bwState) != 0){
+        if (countTrue(bwState) != 0) {  // Recurse
             Integer[] temp = pointSets.get(pointSets.size() - 1).get(pointSets.get(pointSets.size() - 1).size() -1);
             return findLinesSpiralHelper(bwState, pointSets, temp[0], temp[1]);
         } else {
