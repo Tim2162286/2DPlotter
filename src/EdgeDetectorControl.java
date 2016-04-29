@@ -18,12 +18,11 @@ public class EdgeDetectorControl {
         String file = stdin.readLine();
         File imgPath = new File(directory+"/"+file);
         */
-        File imgPath = new File("C:/Users/Tim/Pictures/Caves.jpg");
+        File imgPath = new File("C:/Users/Tim/Pictures/butterfly.jpg");
         BufferedImage img = ImageIO.read(imgPath);
         detector.loadImage(img);
         System.out.println("Use default args (2, 1.41)? y/n");
-        String useDefault = stdin.readLine().toUpperCase();
-        //useDefault = "Y";
+        String useDefault = "Y";//stdin.readLine().toUpperCase();
         if (useDefault.equals("Y") || useDefault.equals("YES"))
             detector.getEdgeMatrix();
         else{

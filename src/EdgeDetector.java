@@ -22,7 +22,11 @@ public interface EdgeDetector {
      * edge detection algorithm.
      * @return boolean[][] true if the pixel is on an edge, false if not
      */
-
-    public void getEdgeMatrix() throws IOException;
     public boolean[][] getEdgeMatrix(int blurRadius, double blurLevel) throws IOException;
+
+    /**
+     * Runs with default arguments.
+     * @throws IOException
+     */
+    public boolean[][] getEdgeMatrix() throws IOException;
 }

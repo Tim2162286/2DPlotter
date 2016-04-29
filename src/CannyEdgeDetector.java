@@ -24,23 +24,23 @@ public class CannyEdgeDetector implements EdgeDetector {
     public boolean[][] getEdgeMatrix(int blurRadius,double blurLevel) throws IOException {
         int[][][] sobel = {{{-1,0,1},{-2,0,2},{-1,0,1}},
                             {{1,2,1},{0,0,0},{-1,-2,-1}}};
-
-        File output = new File("src\\Images\\Base Image.jpg");
+        int[] thresholds ={40,80};
+        File output = new File("src\\ImageOut\\EdgeDetectorSteps\\Base Image.jpg");
         ImageIO.write(image, "jpg", output);
         BufferedImage grayImg = convertToGrayScale(image);
         int[][] grayArray = imageToMatrix(grayImg);
         int[][] blur = blur(blurLevel, blurRadius, grayArray);
         int[][][] gradient = gradientMagnitudes(blur,sobel);
         int[][] maximums = nonMximumSupression(gradient);
-        return new boolean[0][];
+        return twoLevelHysteresis(maximums,thresholds);
     }
 
     /**
      * Calls getEdgeMatrix with default values of 2 and 1.41
      * @throws IOException
      */
-    public void getEdgeMatrix() throws IOException {
-        getEdgeMatrix(2, 1.41);
+    public boolean[][] getEdgeMatrix() throws IOException {
+        return getEdgeMatrix(2, 1.41);
 
     }
 
@@ -69,7 +69,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         Graphics g = result.getGraphics();
         g.drawImage(image, 0, 0, null);
         g.dispose();
-        File output = new File("src\\Images\\Step 1-Grayscale.jpg");
+        File output = new File("src\\ImageOut\\EdgeDetectorSteps\\Step 1-Grayscale.jpg");
         ImageIO.write(result, "jpg", output);
         return result;
     }
@@ -96,7 +96,8 @@ public class CannyEdgeDetector implements EdgeDetector {
                 img.setRGB(i,j,gray.getRGB());
             }
         }
-        File output = new File("src\\Images\\"+name+".jpg");
+        File output = new File("src\\ImageOut\\EdgeDetectorSteps\\"+name+".jpg");
+        output.mkdirs();
         ImageIO.write(img, "jpg", output);
     }
 
@@ -295,8 +296,50 @@ public class CannyEdgeDetector implements EdgeDetector {
                 img.setRGB(i,j,color.getRGB());
             }
         }
-        File output = new File("src\\Images\\"+name+".jpg");
+        File output = new File("src\\ImageOut\\EdgeDetectorSteps\\"+name+".jpg");
         ImageIO.write(img, "jpg", output);
     }
 
+    boolean[][] twoLevelHysteresis(int[][] matrix, int[] thresholds) throws IOException{
+        int width = matrix.length;
+        int height = matrix[0].length;
+        boolean[][] results = new boolean[width][height];
+        boolean pixelsAdded;
+        for(int w=0;w<width;w++){
+            for(int h=0;h<height;h++) {
+                if (matrix[w][h] < thresholds[0])
+                    matrix[w][h] = 0;
+                else if (matrix[w][h] > thresholds[1])
+                    results[w][h] = true;
+            }
+        }
+        do {
+            pixelsAdded = false;
+            for (int w=1;w<width-1;w++){
+                for (int h=1;h<height-1;h++){
+                    if (!results[w][h] && matrix[w][h]>=thresholds[0])
+                    for (int i=-1;i<2;i++){
+                        for (int j=-1;j<2;j++){
+                            if (results[w+i][h+j]){
+                                results[w][h] = true;
+                                pixelsAdded = true;
+                            }
+                        }
+                    }
+                }
+            }
+        } while (pixelsAdded);
+        matrixToImage(matrix,"test1");
+        for (int w=0;w<width;w++){
+            for (int h=0;h<height;h++){
+                if (results[w][h])
+                    matrix[w][h] = 255;
+                else
+                    matrix[w][h] = 0;
+            }
+        }
+        matrixToImage(matrix,"test2");
+        return results;
+    }
+    //int[] getThreshold(int[][]){}
 }
