@@ -15,7 +15,9 @@ public class SplineControl {
         SplineGenerator parametric = new ParametricSplineInterpolator(2, edges.length, edges[0].length);
         parametric.setEdgeMatrix(edges);
         ParametricSplineWriter psWriter = new ParametricSplineWriter();
-        psWriter.splineToImage(parametric.getSpline(), new File("Output.jpg"), "jpg", edges.length, edges[0].length);
+        File image = new File("src\\ImageOut\\SplineOutput.png");
+        image.mkdirs();
+        psWriter.splineToImage(parametric.getSpline(), image, "png", edges.length, edges[0].length);
     }
 
     static final boolean[][] edges = new boolean[][] {

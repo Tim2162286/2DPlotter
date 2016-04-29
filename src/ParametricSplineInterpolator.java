@@ -278,7 +278,7 @@ public class ParametricSplineInterpolator implements SplineGenerator {
         }
         if (countTrue(bwState) != 0) {  // Double-tail recursion
             Integer[] temp = pointSets.get(pointSets.size() - 1).get(pointSets.get(pointSets.size() - 1).size() -1);
-            return findLinesSpiralHelper(bwState, pointSets, temp[0], temp[1]);
+            return findLinesSpiralRecursive(bwState, pointSets, temp[0], temp[1]);
         } else {
             return pointSets;   // when there are no more points, return the result
         }
