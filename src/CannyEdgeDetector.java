@@ -280,9 +280,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         for (int i=0;i<width;i++){
             for (int j=0;j<height;j++){
 
-                if (mag[i][j]==0)
-                    color = color.BLACK;
-                else if ((direction[i][j]==0 || direction[i][j]==180 || direction[i][j]==-180) && mag[i][j]!=0)
+                if ((direction[i][j]==0 || direction[i][j]==180 || direction[i][j]==-180) && mag[i][j]!=0)
                     color = Color.BLUE;
                 else if (direction[i][j]==-135 || direction[i][j]==45)
                     color = Color.CYAN;
@@ -291,7 +289,7 @@ public class CannyEdgeDetector implements EdgeDetector {
                 else if (direction[i][j]==-45 ||direction[i][j]==135)
                     color = Color.YELLOW;
                 else{
-                    color = Color.RED;
+                    color = Color.BLACK;
                 }
                 img.setRGB(i,j,color.getRGB());
             }
