@@ -60,7 +60,7 @@ public class ParametricSplineWriter implements SplineWriter{
      */
     public void splineToImage(ArrayList<ArrayList<Integer[]>> splines, File imageFile, String format, int width, int height) {
         try {
-            File animated = new File("src\\ImageOut\\SplineAnimation.gif");
+            File animated = new File("src/ImageOut/SplineAnimation.gif");
             animated.getParentFile().mkdirs();
             animated.createNewFile();
             splineToImage(splines, imageFile, animated, format, width, height);

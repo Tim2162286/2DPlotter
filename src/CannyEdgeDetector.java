@@ -25,7 +25,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         int[][][] sobel = {{{-1,0,1},{-2,0,2},{-1,0,1}},
                             {{1,2,1},{0,0,0},{-1,-2,-1}}};
         int[] thresholds ={40,80};
-        File output = new File("src\\ImageOut\\EdgeDetectorSteps\\Base Image.jpg");
+        File output = new File("src/ImageOut/EdgeDetectorSteps/Base Image.jpg");
         output.mkdirs();
         ImageIO.write(image, "jpg", output);
         BufferedImage grayImg = convertToGrayScale(image);
@@ -70,7 +70,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         Graphics g = result.getGraphics();
         g.drawImage(image, 0, 0, null);
         g.dispose();
-        File output = new File("src\\ImageOut\\EdgeDetectorSteps\\Step 1-Grayscale.jpg");
+        File output = new File("src/ImageOut/EdgeDetectorSteps/Step 1-Grayscale.jpg");
         output.mkdirs();
         ImageIO.write(result, "jpg", output);
         return result;
@@ -98,7 +98,7 @@ public class CannyEdgeDetector implements EdgeDetector {
                 img.setRGB(i,j,gray.getRGB());
             }
         }
-        File output = new File("src\\ImageOut\\EdgeDetectorSteps\\"+name+".jpg");
+        File output = new File("src/ImageOut/EdgeDetectorSteps/"+name+".jpg");
         output.mkdirs();
         ImageIO.write(img, "jpg", output);
     }
@@ -296,7 +296,7 @@ public class CannyEdgeDetector implements EdgeDetector {
                 img.setRGB(i,j,color.getRGB());
             }
         }
-        File output = new File("src\\ImageOut\\EdgeDetectorSteps\\"+name+".jpg");
+        File output = new File("src/ImageOut/EdgeDetectorSteps/"+name+".jpg");
         output.mkdirs();
         ImageIO.write(img, "jpg", output);
     }

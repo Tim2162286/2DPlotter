@@ -217,7 +217,7 @@ public class ParametricSplineInterpolator implements SplineGenerator {
      * @param bwState 2D array representing the pixel states in the image
      */
     public ArrayList<ArrayList<Integer[]>> findLinesSpiral(boolean[][] bwState){
-        return findLinesSpiralRecursive(bwState, new ArrayList<ArrayList<Integer[]>>(), bwState[0].length/2,
+        return findLinesSpiralIterative(bwState, new ArrayList<ArrayList<Integer[]>>(), bwState[0].length/2,
                 bwState.length/2);
     }
 
@@ -233,7 +233,7 @@ public class ParametricSplineInterpolator implements SplineGenerator {
      * @param y starting y coordinate
      * @return pointSets after all lines have been found
      */
-    public ArrayList<ArrayList<Integer[]>> findLinesSpiralRecursive(boolean[][] bwState,
+    /*public ArrayList<ArrayList<Integer[]>> findLinesSpiralRecursive(boolean[][] bwState,
                                                                  ArrayList<ArrayList<Integer[]>> pointSets,
                                                                  int x,
                                                                  int y) {
@@ -287,6 +287,57 @@ public class ParametricSplineInterpolator implements SplineGenerator {
          * Due to time constraints, I have decided to retain the recursive method, which may limit the maximum line
          * length depending on memory availability. This is not ideal, but should work in the vast majority of cases.
          */
+    //}
+
+    private ArrayList<ArrayList<Integer[]>> findLinesSpiralIterative(boolean[][] bwState,
+                                                                     ArrayList<ArrayList<Integer[]>> pointSets,
+                                                                     int x,
+                                                                     int y) {
+        while (countTrue(bwState) != 0) {
+            boolean pixelOn = false;
+            int length = 2;
+            int pixelsTested = 0;
+            do {
+                int i = 0;
+                int count = 0;
+                x--;
+                y++;
+                do {  // this loops outward in a square spiral pattern
+                    count++;
+                    switch (i) {
+                        case 0:
+                            x++;
+                            break;
+                        case 1:
+                            y--;
+                            break;
+                        case 2:
+                            x--;
+                            break;
+                        case 3:
+                            y++;
+                            break;
+                    }
+                    if (x >= 0 && y >= 0 && x < bwState[0].length && y < bwState.length) {  // (x,y) is inside the image
+                        pixelsTested++;  // count the number of pixels tested so we know when we are done
+                        pixelOn = bwState[y][x];   // set this for use in the loop condition
+                    }
+                    if (count == length) {  // once the current side length is reached
+                        count = 0;  // reset the count and increment to the next side
+                        i++;
+                    }
+                } while (i < 4 && !pixelOn);  // go around the whole square, unless a point is found
+                length += 2;  // increase the spiral side length by two
+            } while (pixelsTested < bwState.length * bwState[0].length && !pixelOn);
+            if (pixelOn) {
+                pointSets.add(findLine(bwState, new ArrayList<Integer[]>(), x, y));
+                removeSingle(bwState);  // remove any points that are by themselves
+            }
+            Integer[] temp = pointSets.get(pointSets.size() - 1).get(pointSets.get(pointSets.size() - 1).size() - 1);
+            x = temp[0];
+            y = temp[1];
+        }
+        return pointSets;
     }
 
     /**

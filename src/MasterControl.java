@@ -45,7 +45,7 @@ public class MasterControl {
         SplineGenerator parametric = new ParametricSplineInterpolator(2, edges.length, edges[0].length);
         parametric.setEdgeMatrix(edges);
         ParametricSplineWriter psWriter = new ParametricSplineWriter();
-        File image = new File("src\\ImageOut\\SplineOutput.png");
+        File image = new File("src/ImageOut/SplineOutput.png");
         image.getParentFile().mkdirs();
         image.createNewFile();
         psWriter.splineToImage(parametric.getSpline(), image, "png", edges.length, edges[0].length);
