@@ -24,7 +24,7 @@ public class CannyEdgeDetector implements EdgeDetector {
     public boolean[][] getEdgeMatrix(int blurRadius,double blurLevel) throws IOException {
         int[][][] sobel = {{{-1,0,1},{-2,0,2},{-1,0,1}},
                             {{1,2,1},{0,0,0},{-1,-2,-1}}};
-        int[] thresholds ={40,80};
+        int[] thresholds ={20,80};
         File output = new File("src/ImageOut/EdgeDetectorSteps/Base Image.jpg");
         output.mkdirs();
         ImageIO.write(image, "jpg", output);
@@ -32,7 +32,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         int[][] grayArray = imageToMatrix(grayImg);
         int[][] blur = blur(blurLevel, blurRadius, grayArray);
         int[][][] gradient = gradientMagnitudes(blur,sobel);
-        int[][] maximums = nonMximumSupression(gradient);
+        int[][] maximums = nonMaximumSuppression(gradient);
         return twoLevelHysteresis(maximums,thresholds);
     }
 
@@ -210,8 +210,9 @@ public class CannyEdgeDetector implements EdgeDetector {
             for (int x = 0;x<width-2*radius;x++){
                 mag = (int)Math.sqrt((double)((gradX[x][y]*gradX[x][y])+(gradY[x][y]*gradY[x][y])));
                 gradientMag[x][y] = mag;
-                direction = Math.round(Math.toDegrees(Math.atan2(gradY[x][y],gradX[x][y]))/45.0);
-                gradientDirection[x][y] = (int)direction*45;
+                //direction = Math.round(Math.toDegrees(Math.atan2(gradY[x][y],gradX[x][y]))/45.0);
+                //gradientDirection[x][y] = (int)direction*45;
+                gradientDirection[x][y] = (int)Math.round(Math.toDegrees(Math.atan2(gradY[x][y],gradX[x][y])));;
             }
         }
         gradient[0] = gradientMag;
@@ -229,7 +230,7 @@ public class CannyEdgeDetector implements EdgeDetector {
      * @return int[][] 2D array of the center of each edge line.
      * @throws IOException
      */
-    int[][] nonMximumSupression(int[][][] gradient) throws IOException{
+    int[][] nonMaximumSuppression(int[][][] gradient) throws IOException{
         int[][] mag = gradient[0];
         int[][] direction = gradient[1];
         int width = mag.length;
@@ -237,22 +238,24 @@ public class CannyEdgeDetector implements EdgeDetector {
         boolean[][] maximum = new boolean[width][height];
         for(int w=1;w<width-1;w++){
             for(int h=1;h<height-1;h++){
-                if ((direction[w][h]==0 || direction[w][h]==180 || direction[w][h]==-180) && mag[w][h]!=0){
-                    if ((mag[w][h]>mag[w][h+1] && mag[w][h]>mag[w][h-1]) || mag[w][h]==mag[w][h+1] || mag[w][h]==mag[w][h-1])
-                        maximum[w][h] = true;
+                int dir1 = (direction[w][h] + 360) % 180;
+                double w1 = (dir1 % 45) / 45.;
+                double w2 = 1. - w1;
+                double p1, p2;
+                if (dir1 >= 0 && dir1 < 45) {
+                    p1 = mag[w+1][h] * w1 + mag[w+1][h+1] * w2;
+                    p2 = mag[w-1][h] * w1 + mag[w-1][h-1] * w2;
+                } else if (dir1 >= 45 && dir1 < 90) {
+                    p1 = mag[w+1][h+1] * w1 + mag[w][h+1] * w2;
+                    p2 = mag[w-1][h-1] * w1 + mag[w][h-1] * w2;
+                } else if (dir1 >= 90 && dir1 < 135) {
+                    p1 = mag[w][h+1] * w1 + mag[w-1][h+1] * w2;
+                    p2 = mag[w][h-1] * w1 + mag[w+1][h-1] * w2;
+                } else {
+                    p1 = mag[w-1][h+1] * w1 + mag[w-1][h] * w2;
+                    p2 = mag[w+1][h-1] * w1 + mag[w+1][h] * w2;
                 }
-                else if (direction[w][h] == 45 || direction[w][h] == -135){
-                    if ((mag[w][h]>mag[w+1][h+1] && mag[w][h]>mag[w-1][h-1]) || mag[w][h]==mag[w+1][h+1] || mag[w][h]==mag[w-1][h-1])
-                        maximum[w][h] = true;
-                }
-                else if (direction[w][h] == 90 || direction[w][h] == -90){
-                    if ((mag[w][h]>mag[w+1][h] && mag[w][h]>mag[w-1][h]) || mag[w][h]==mag[w+1][h] || mag[w][h]==mag[w-1][h])
-                        maximum[w][h] = true;
-                }
-                else if (direction[w][h] == -45 || direction[w][h] == 135){
-                    if ((mag[w][h]>mag[w-1][h+1] && mag[w][h]>mag[w+1][h-1]) || mag[w][h]==mag[w-1][h+1] || mag[w][h]==mag[w+1][h-1])
-                        maximum[w][h] = true;
-                }
+                maximum[w][h] = mag[w][h] >= p1 && mag[w][h] >= p2;
             }
         }
         for(int w=0;w<width;w++){
@@ -272,12 +275,12 @@ public class CannyEdgeDetector implements EdgeDetector {
      * @throws IOException
      */
 
-    void matrixToDirectionGradientImage(int[][][] gradient, String name)throws IOException{
+    private void matrixToDirectionGradientImage(int[][][] gradient, String name)throws IOException{
         int[][] direction = gradient[1];
         int[][] mag = gradient[0];
         int width = direction.length;
         int height = direction[0].length;
-        Color color = new Color(0,0,0);
+        Color color;
         BufferedImage img = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
         for (int i=0;i<width;i++){
             for (int j=0;j<height;j++){
@@ -301,7 +304,7 @@ public class CannyEdgeDetector implements EdgeDetector {
         ImageIO.write(img, "jpg", output);
     }
 
-    boolean[][] twoLevelHysteresis(int[][] matrix, int[] thresholds) throws IOException{
+    private boolean[][] twoLevelHysteresis(int[][] matrix, int[] thresholds) throws IOException{
         int width = matrix.length;
         int height = matrix[0].length;
         boolean[][] results = new boolean[width][height];
